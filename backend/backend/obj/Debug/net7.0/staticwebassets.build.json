@@ -1,0 +1,19 @@
+{
+  "Version": 1,
+  "Hash": "d+l8QvY56kuWWx4cd0RLehZd7H0jrQmee10LYlHBKyU=",
+  "Source": "backend",
+  "BasePath": "_content/backend",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [
+    {
+      "Name": "backend\\wwwroot",
+      "Source": "backend",
+      "ContentRoot": "D:\\studing\\intership_double\\Final_project\\backend\\backend\\wwwroot\\",
+      "BasePath": "_content/backend",
+      "Pattern": "**"
+    }
+  ],
+  "Assets": []
+}
