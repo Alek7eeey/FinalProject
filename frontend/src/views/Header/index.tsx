@@ -1,7 +1,6 @@
-import {ReactElement} from "react";
 import useStyles from "./style";
 
-const Index = ():ReactElement => {
+const Index = () => {
     const classes = useStyles();
     return(
         <div className={classes.text}>

@@ -1,8 +1,10 @@
-using backend.Data;
-using backend.Services;
-using backend.Services.Implementations;
+using backend.DataAccess.DataAccess.DbPatterns;
+using backend.DataAccess.DataAccess.DbPatterns.Interfaces;
+using backend.WebNavigator.Services.Interface;
+using backend.WebNavigator.Services.Service;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using DBContext = backend.DataAccess.DataAccess.DBContext;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,10 +12,9 @@ string connection = builder.Configuration.GetConnectionString("DefaultConnection
 builder.Services.AddDbContext<DBContext>(options => options.UseSqlServer(connection));
 
 // Add services to the container.
-builder.Services.AddScoped<NodeService>();
-builder.Services.AddScoped<EntryService>();
-builder.Services.AddScoped<EntryRepository>();
-builder.Services.AddScoped<NodeRepository>();
+builder.Services.AddTransient<IUnitOfWork, UnitOfWork>();
+builder.Services.AddTransient<IEntryService, EntryService>();
+builder.Services.AddTransient<INodeService, NodeService>();
 
 builder.Services.AddControllers();
 

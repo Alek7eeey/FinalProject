@@ -20,6 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="DataAccess\Migrations\" />
     <Folder Include="wwwroot\" />
   </ItemGroup>
 

@@ -1,19 +1,10 @@
 import Grid from "../views/Grid";
 import {observer} from "mobx-react-lite";
-import {FC, ReactElement} from "react";
+import {FC} from "react";
 import types from "../enumTypes";
+import {IGridContainer} from "./interfaces";
 
-interface IGridContainer  {
-    data: {
-        id: number;
-        name: string;
-        type: string;
-        parentName: string;
-        description: string;
-    }[]
-}
-
-const GridContainer:FC<IGridContainer> = observer(({data}):ReactElement => {
+const GridContainer:FC<IGridContainer> = observer(({data}) => {
 
     //временно так
     const clickEntry = (name: string, type: types, description: string):void => {

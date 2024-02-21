@@ -1,9 +1,8 @@
-import {ReactElement} from "react";
 import useStyle from "./style";
 
-const Error = ():ReactElement => {
+const Error = () => {
     const classes = useStyle();
-    const errorDescription: string = 'error 404: page not found!';
+    const errorDescription: string = 'Error 404: page not found!';
     return (
         <div className={classes.errorContainer}>
             <h1>{errorDescription}</h1>

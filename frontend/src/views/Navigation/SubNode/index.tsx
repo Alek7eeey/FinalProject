@@ -1,35 +1,46 @@
-import React, {FC, ReactElement} from "react";
+import React, {FC} from "react";
 import {IconButton} from "@material-ui/core";
 // @ts-ignore
 import icon from "../../../img/addNewNote.png";
 import useStyles from "./style";
 import RemoveIcon from "@material-ui/icons/Remove";
+import {ColorButtonConfig, ISubNode} from "../interfaces";
 
-interface ISubNode{
-    name: string;
-    type: string;
-    removeNode: ()=> void;
-    openEntryModal: ()=>void;
-}
-
-const SubNode: FC<ISubNode> = ({name, type, removeNode, openEntryModal}): ReactElement => {
+const SubNode: FC<ISubNode> = ({name, type, removeNode, openEntryModal}) => {
     const classes = useStyles();
+
+    const buttonsConfig: ColorButtonConfig[] = [
+        {
+            color: "secondary",
+            ariaLabel: "remove",
+            onClick: removeNode,
+            children: <RemoveIcon style={{ color: 'red' }} />
+        },
+        {
+            color: "primary",
+            ariaLabel: "add",
+            onClick: openEntryModal,
+            children: <img src={icon} alt='icon'/>
+        }
+    ];
+
     return (
         <div className={classes.subItem}>
-                <div className={classes.innerLeftPanel}>
-                    {name}
-                </div>
-                <div className={classes.innerRightPanel}>
-                    <IconButton color="secondary" aria-label="remove" onClick={(event) => {event.stopPropagation(); removeNode();}}>
-                        <RemoveIcon style={{ color: 'red' }} />
+            <div className={classes.innerLeftPanel}>{name}</div>
+            <div className={classes.innerRightPanel}>
+                {buttonsConfig.map((button, index) => (
+                    <IconButton
+                        key={index}
+                        color={button.color}
+                        aria-label={button.ariaLabel}
+                        onClick={(event) => {event.stopPropagation(); button.onClick();}}
+                    >
+                        {button.children}
                     </IconButton>
-
-                    <IconButton color="primary" aria-label="add" onClick={(event)=>{event.stopPropagation(); openEntryModal();}}>
-                        <img src={icon} alt='icon'/>
-                    </IconButton>
-                </div>
+                ))}
+            </div>
         </div>
-    )
+    );
 }
 
 export default SubNode;

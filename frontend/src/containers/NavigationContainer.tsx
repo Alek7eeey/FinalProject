@@ -1,62 +1,32 @@
 import Navigation from "../views/Navigation/Menu";
-import React, {FC, ReactElement, useState} from "react";
+import React, {FC} from "react";
 import Modal from "react-modal";
-import AddingNodeForm from "../views/AddingNodeForm";
-import AddingEntryForm from "../views/AddingEntryForm";
-import {observer} from "mobx-react-lite";
-import store from "../store";
-import AddingSubNodeForm from "../views/AddingSubNodeForm";
+import AddingNodeForm from "../views/Form/AddingNode";
+import AddingEntryForm from "../views/Form/AddingEntry";
+import store from "../store/main";
+import AddingSubNodeForm from "../views/Form/AddingSubNode";
 import types from "../enumTypes";
+import {INavigation, INode, ISubNode} from "./interfaces";
+import modalWindowStore from "../store/stateInComponent/modalWindow";
+import { observer } from 'mobx-react';
+import currentNameStore from "../store/stateInComponent/currentNames";
+import formStore from "../store/stateInComponent/form";
 
-interface INavigation{
-    filter: (type: types, name: string)=>void;
-}
-const NavigationContainer:FC<INavigation> = observer(({filter}):ReactElement => {
+const NavigationContainer: FC<INavigation> = observer(({filter}) => {
 
-    const [modalNodeIsOpen, setNodeModalIsOpen] = useState<boolean>(false);
-    const [modalEntryIsOpen, setModalEntryIsOpen] = useState<boolean>(false);
-    const [modalSubNodeIsOpen, setModalSubNodeIsOpen] = useState<boolean>(false);
-
-    const [currentParentNode, setCurrentParentNode] = useState<string>('');
-    const [currentParentTypeNode, setCurrentParentTypeNode] = useState<types>();
-    const [currentChildNode, setCurrentChildNode] = useState<string>();
-
-    const toggleModal = (setModalState: React.Dispatch<React.SetStateAction<boolean>>) => (): void => {
-        setModalState(prevState => !prevState);
-    }
-    const nodeModal = ():void => {
-        toggleModal(setNodeModalIsOpen)();
-    }
-
-    const openSubNodeModal = (parentName: string, parentType: types):void => {
-        setCurrentParentNode(parentName);
-        setCurrentParentTypeNode(parentType);
-        toggleModal(setModalSubNodeIsOpen)();
-    }
-
-    const closeSubNodeModal = ():void => {
-        toggleModal(setModalSubNodeIsOpen)();
-    }
-
-    const openEntryModal = (parentName: string, parentType: types, childNodeName: string):void => {
-        setCurrentChildNode(childNodeName);
-        setCurrentParentNode(parentName);
-        setCurrentParentTypeNode(parentType);
-
-        toggleModal(setModalEntryIsOpen)();
-    }
-
-    const closeEntryModal = ():void => {
-        toggleModal(setModalEntryIsOpen)();
-    }
-
-    const removeNode = async (name:string, type: string):Promise<void>=> {
+    const removeNode = async (name: string, type: string): Promise<void> => {
+        const currentNode = store.data.nodes.find((node: { nodeName: string; }) => node.nodeName === name);
+        if(currentNode){
+            for (const subNode of currentNode.subNodes) {
+                await currentNode.removeSubNode(subNode.name, currentNode.nodeType, currentNode.nodeName);
+            }
+        }
         await store.data.removeNode(name, type);
         filter(type as types, name);
     }
 
-    const removeSubNode = async (name:string, parentName: string):Promise<void>=>{
-        const parentNode = store.data.data.find((node: { nodeName: string; }) => node.nodeName === parentName);
+    const removeSubNode = async (name: string, parentName: string): Promise<void> => {
+        const parentNode = store.data.nodes.find((node: { nodeName: string; }) => node.nodeName === parentName);
 
         if (parentNode) {
             await parentNode.removeSubNode(name, parentNode.nodeType, parentNode.nodeName);
@@ -66,76 +36,131 @@ const NavigationContainer:FC<INavigation> = observer(({filter}):ReactElement => 
         }
     }
 
-    const addNode = async(name:string, type: types):Promise<boolean>=>{
-        if(store.data.data.filter((node: { nodeName: string; })=> node.nodeName === name).length>0)
-        {
-            return false;
+    const checkAndAddNode = async():Promise<boolean> => {
+        formStore.setCleanAllError();
+        let result: boolean = true;
+
+        if (formStore.name.length <= 0 || formStore.type.length <= 0) {
+            if(!formStore.emptyFieldError) formStore.setEmptyFieldError();
+        } else {
+            result = await addNode(formStore.name, formStore.type as types);
+            if (!result) {
+                if(!formStore.duplicateNameError) formStore.setDuplicateNameError();
+            }
         }
+
+        return result;
+    }
+    const addNode = async (name: string, type: types): Promise<boolean> => {
+        const countSuchNodes: number = store.data.nodes.filter((node: { nodeName: string; }) => node.nodeName === name).length;
+
+        if (countSuchNodes > 0) return false;
+
         await store.data.addNode(name, type as string, true);
-        toggleModal(setNodeModalIsOpen)();
+        modalWindowStore.setStateNodeModal();
+        filter(type, name);
+
         return true;
     }
 
-    const addSubNode = async (name: string): Promise<boolean> => {
-        const parentNode = store.data.data.find((node: { nodeName: string; nodeType: types | undefined; })=> node.nodeName === currentParentNode && node.nodeType === currentParentTypeNode);
-
-        if (parentNode) {
-            if(parentNode.subNodes.filter((subNode: { name: string; })=> subNode.name === name).length>0) return false;
-            await parentNode.addSubNode(name, parentNode.nodeType, parentNode.nodeName, true);
-            toggleModal(setModalSubNodeIsOpen)();
-            return true;
+    const checkAndAddSubNode = async() => {
+        let result: boolean = true;
+        formStore.setCleanAllError();
+        if (formStore.name.length<=0) {
+            if(!formStore.emptyFieldError) formStore.setEmptyFieldError();
         } else {
-            return false;
+            result = await addSubNode(formStore.name);
+            if (!result) {
+                if(!formStore.duplicateNameError) formStore.setDuplicateNameError()
+            }
         }
+
+        return result;
+    }
+    const addSubNode = async (name: string): Promise<boolean> => {
+        const parentNode = store.data.nodes.find((node: INode) =>
+            node.nodeName === currentNameStore.currentParentNode && node.nodeType === currentNameStore.currentParentTypeNode);
+
+        if (!parentNode) return false;
+
+        const countSuchSubNodes: number = parentNode.subNodes.filter((subNode: { name: string; }) => subNode.name === name).length;
+        if ( countSuchSubNodes> 0) return false;
+
+        await parentNode.addSubNode(name, parentNode.nodeType, parentNode.nodeName, true);
+        modalWindowStore.setStateSubNodeModal();
+        filter(parentNode.nodeType as types, name);
+
+        return true;
     }
 
-    const addEntry = async(name: string, description: string):Promise<void>=>{
-        const parentNode = store.data.data.find((node: { nodeName: string; nodeType: types | undefined; })=> node.nodeName === currentParentNode && node.nodeType === currentParentTypeNode);
+    const checkAndAddEntry = async ():Promise<void> =>{
+        formStore.setCleanAllError();
+        if(formStore.name.length>0 && formStore.description.length>0) {
+            await addEntry(formStore.name, formStore.description);
+        }
+        else {
+            if(!formStore.emptyFieldError) formStore.setEmptyFieldError();
+        }
+    }
+    const addEntry = async (name: string, description: string): Promise<void> => {
+        const parentNode = store.data.nodes.find((node: INode) =>
+            node.nodeName === currentNameStore.currentParentNode && node.nodeType === currentNameStore.currentParentTypeNode);
 
-        if(parentNode)
-        {
-            const childNode = parentNode?.subNodes.find((subNode: { name: string | undefined; type: types | undefined; })=>subNode.name === currentChildNode && subNode.type === currentParentTypeNode);
+        if (parentNode) {
+            const childNode = parentNode?.subNodes.find((subNode: ISubNode) =>
+                subNode.name === currentNameStore.currentChildNode && subNode.type === currentNameStore.currentParentTypeNode);
 
             if (childNode) {
-                const defaultId:number = -1;
+                const defaultId: number = -1;
                 await childNode.addEntry(defaultId, name, parentNode.nodeType, description, childNode.name, parentNode.nodeName, true);
                 filter(parentNode.nodeType as types, childNode.name);
             } else {
-                console.error(`Узел с именем ${currentParentNode} не найден`);
+                console.error(`Узел с именем ${currentNameStore.currentParentNode} не найден`);
             }
         }
-        toggleModal(setModalEntryIsOpen)();
+        modalWindowStore.setStateEntryModal();
     }
 
+    const modalConfig = [
+        {
+            isOpen: modalWindowStore.stateNodeModal,
+            onRequestClose: modalWindowStore.setStateNodeModal,
+            component: <AddingNodeForm closeModal={modalWindowStore.setStateNodeModal} addNode={checkAndAddNode} />,
+        },
+        {
+            isOpen: modalWindowStore.stateEntryModal,
+            onRequestClose: modalWindowStore.setStateEntryModal,
+            component: <AddingEntryForm closeModal={modalWindowStore.setStateEntryModal} addEntry={checkAndAddEntry} />,
+        },
+        {
+            isOpen: modalWindowStore.stateSubNodeModal,
+            onRequestClose: modalWindowStore.setStateSubNodeModal,
+            component: <AddingSubNodeForm closeModal={modalWindowStore.setStateSubNodeModal} addSubNode={checkAndAddSubNode} />,
+        },
+    ];
+
     return (
-        <div>
-            <Modal
-                isOpen={modalNodeIsOpen}
-                onRequestClose={nodeModal}
-                contentLabel="Добавить узел"
-            >
-                <AddingNodeForm closeModal={nodeModal} addNode={addNode}/>
-            </Modal>
+        <>
+            {modalConfig.map((modal, index) => (
+                <Modal
+                    key={index}
+                    isOpen={modal.isOpen}
+                    onRequestClose={modal.onRequestClose}
+                >
+                    {modal.component}
+                </Modal>
+            ))}
 
-            <Modal
-                isOpen={modalEntryIsOpen}
-                onRequestClose={closeEntryModal}
-                contentLabel="Добавить запись"
-            >
-                <AddingEntryForm closeModal={closeEntryModal} addEntry={addEntry}/>
-            </Modal>
-
-            <Modal
-                isOpen={modalSubNodeIsOpen}
-                onRequestClose={closeSubNodeModal}
-                contentLabel="Добавить дочерний узел"
-            >
-                <AddingSubNodeForm closeModal={closeSubNodeModal} addSubNode={addSubNode}/>
-            </Modal>
-
-            <Navigation filter={(name, type)=>{filter(type, name)}} data={store.data.data} removeSubNode={removeSubNode} openModal={nodeModal} openEntryModal={openEntryModal} removeNode={removeNode} openSubNodeModal={openSubNodeModal}/>
-        </div>
+            <Navigation filter={(name, type) => {
+                filter(type, name)
+            }}
+                        data={store.data.nodes}
+                        removeSubNode={removeSubNode}
+                        openModal={modalWindowStore.setStateNodeModal}
+                        openEntryModal={modalWindowStore.openEntryModal}
+                        removeNode={removeNode}
+                        openSubNodeModal={modalWindowStore.openSubNodeModal}/>
+        </>
     )
 })
-
 export default NavigationContainer;

@@ -1,4 +1,4 @@
-import React, {FC, ReactElement} from 'react';
+import React, {FC} from 'react';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
 import TableCell from '@material-ui/core/TableCell';
@@ -8,41 +8,35 @@ import TableRow from '@material-ui/core/TableRow';
 import Paper from '@material-ui/core/Paper';
 import useStyles from "./style";
 import types from "../../enumTypes";
+import {CellConfig, IGrid} from "./interface";
 
-interface IGrid{
-    data: {
-        id: number;
-        name: string;
-        type: string;
-        parentName: string;
-        description: string;
-    }[],
-
-    clickEntry: (name: string, type: types, description: string)=> void;
-}
-const Grid:FC<IGrid> = ({data, clickEntry}) :ReactElement => {
+const Grid:FC<IGrid> = ({data, clickEntry}) => {
     const classes = useStyles();
+
+    const cellConfig: CellConfig[] = [
+        { align: "center", dataKey: "id", headerName: "ID" },
+        { align: "center", dataKey: "name", headerName: "Название" },
+        { align: "center", dataKey: "type", headerName: "Тип" },
+        { align: "center", dataKey: "parentName", headerName: "Имя родителя" },
+        { align: "center", dataKey: "description", headerName: "Описание" }
+    ];
 
     return (
         <TableContainer component={Paper} className={classes.container}>
             <Table aria-label="simple table">
                 <TableHead>
                     <TableRow>
-                        <TableCell>ID</TableCell>
-                        <TableCell align="center">Название</TableCell>
-                        <TableCell align="center">Тип</TableCell>
-                        <TableCell align="center">Родитель</TableCell>
-                        <TableCell align="center">Описание</TableCell>
+                        {cellConfig.map((cell, index) => (
+                            <TableCell key={index} align={cell.align}>{cell.headerName}</TableCell>
+                        ))}
                     </TableRow>
                 </TableHead>
                 <TableBody>
                     {data.map((data) => (
                         <TableRow key={data.id} className={classes.row} onClick={()=>clickEntry(data.name, data.type as types, data.description)}>
-                            <TableCell component="th" scope="row">{data.id}</TableCell>
-                            <TableCell align="center">{data.name}</TableCell>
-                            <TableCell align="center">{data.type}</TableCell>
-                            <TableCell align="center">{data.parentName}</TableCell>
-                            <TableCell align="center">{data.description}</TableCell>
+                            {cellConfig.map((cell, index) => (
+                                <TableCell key={index} component="th" scope="row" align={cell.align}>{data[cell.dataKey]}</TableCell>
+                            ))}
                         </TableRow>
                     ))}
                 </TableBody>

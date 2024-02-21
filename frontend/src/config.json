@@ -1,0 +1,7 @@
+{
+  "server": {
+    "url": "https://localhost:7198",
+    "host": "localhost",
+    "port": 7198
+  }
+}
