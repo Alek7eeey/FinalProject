@@ -11,15 +11,25 @@ import modalWindowStore from "../store/stateInComponent/modalWindow";
 import { observer } from 'mobx-react';
 import currentNameStore from "../store/stateInComponent/currentNames";
 import formStore from "../store/stateInComponent/form";
+import errorDescription from "../errorDescription";
 
 const NavigationContainer: FC<INavigation> = observer(({filter}) => {
 
+    const removeSpaces = (value:string):string=>
+    {
+        return  value.replace(/\s/g, '');
+    }
+
     const removeNode = async (name: string, type: string): Promise<void> => {
         const currentNode = store.data.nodes.find((node: { nodeName: string; }) => node.nodeName === name);
-        if(currentNode){
-            for (const subNode of currentNode.subNodes) {
-                await currentNode.removeSubNode(subNode.name, currentNode.nodeType, currentNode.nodeName);
-            }
+        if(!currentNode)
+        {
+            console.error(errorDescription.nodeNotFoundError);
+            return ;
+        }
+
+        for (const subNode of currentNode.subNodes) {
+            await currentNode.removeSubNode(subNode.name, currentNode.nodeType, currentNode.nodeName);
         }
         await store.data.removeNode(name, type);
         filter(type as types, name);
@@ -28,31 +38,43 @@ const NavigationContainer: FC<INavigation> = observer(({filter}) => {
     const removeSubNode = async (name: string, parentName: string): Promise<void> => {
         const parentNode = store.data.nodes.find((node: { nodeName: string; }) => node.nodeName === parentName);
 
-        if (parentNode) {
-            await parentNode.removeSubNode(name, parentNode.nodeType, parentNode.nodeName);
-            filter(parentNode.nodeType as types, name);
-        } else {
-            console.error(`Узел с именем ${parentName} не найден`);
+        if (!parentNode) {
+            console.error(errorDescription.nodeNotFoundError);
+            return ;
         }
+
+        await parentNode.removeSubNode(name, parentNode.nodeType, parentNode.nodeName);
+        filter(parentNode.nodeType as types, name);
     }
 
-    const checkAndAddNode = async():Promise<boolean> => {
+    const checkAndAddNode = async(): Promise<boolean> => {
         formStore.setCleanAllError();
-        let result: boolean = true;
+        const result: boolean = true;
+        const nameWithoutSpace: string = removeSpaces(formStore.name);
+        const type: string = formStore.type;
 
-        if (formStore.name.length <= 0 || formStore.type.length <= 0) {
+        if(nameWithoutSpace.length >= 150) {
+            formStore.setNameIsToLongError();
+            return false;
+        }
+
+        if (nameWithoutSpace.length <= 0 || type.length <= 0) {
             if(!formStore.emptyFieldError) formStore.setEmptyFieldError();
-        } else {
-            result = await addNode(formStore.name, formStore.type as types);
-            if (!result) {
-                if(!formStore.duplicateNameError) formStore.setDuplicateNameError();
-            }
+            return false;
+        }
+
+        const addNodeResult = await addNode(formStore.name, formStore.type as types);
+        if (!addNodeResult) {
+            if(!formStore.duplicateNameError) formStore.setDuplicateNameError();
+            return false;
         }
 
         return result;
     }
+
     const addNode = async (name: string, type: types): Promise<boolean> => {
-        const countSuchNodes: number = store.data.nodes.filter((node: { nodeName: string; }) => node.nodeName === name).length;
+        const countSuchNodes: number = store.data.nodes.filter((node: { nodeName: string; }) =>
+            removeSpaces(node.nodeName) === removeSpaces(name)).length;
 
         if (countSuchNodes > 0) return false;
 
@@ -63,27 +85,38 @@ const NavigationContainer: FC<INavigation> = observer(({filter}) => {
         return true;
     }
 
-    const checkAndAddSubNode = async() => {
-        let result: boolean = true;
+    const checkAndAddSubNode = async():Promise<boolean> => {
         formStore.setCleanAllError();
-        if (formStore.name.length<=0) {
+        const result: boolean = true;
+        const nameWithoutSpace: string = removeSpaces(formStore.name);
+
+        if(nameWithoutSpace.length >= 150) {
+            formStore.setNameIsToLongError();
+            return false;
+        }
+
+        if (nameWithoutSpace.length <= 0) {
             if(!formStore.emptyFieldError) formStore.setEmptyFieldError();
-        } else {
-            result = await addSubNode(formStore.name);
-            if (!result) {
-                if(!formStore.duplicateNameError) formStore.setDuplicateNameError()
-            }
+            return false;
+        }
+
+        const addSubNodeResult = await addSubNode(formStore.name);
+        if (!addSubNodeResult) {
+            if(!formStore.duplicateNameError) formStore.setDuplicateNameError();
+            return false;
         }
 
         return result;
     }
+
     const addSubNode = async (name: string): Promise<boolean> => {
         const parentNode = store.data.nodes.find((node: INode) =>
             node.nodeName === currentNameStore.currentParentNode && node.nodeType === currentNameStore.currentParentTypeNode);
 
         if (!parentNode) return false;
 
-        const countSuchSubNodes: number = parentNode.subNodes.filter((subNode: { name: string; }) => subNode.name === name).length;
+        const countSuchSubNodes: number = parentNode.subNodes.filter((subNode: { name: string; }) =>
+            removeSpaces(subNode.name) === removeSpaces(name)).length;
         if ( countSuchSubNodes> 0) return false;
 
         await parentNode.addSubNode(name, parentNode.nodeType, parentNode.nodeName, true);
@@ -93,15 +126,24 @@ const NavigationContainer: FC<INavigation> = observer(({filter}) => {
         return true;
     }
 
-    const checkAndAddEntry = async ():Promise<void> =>{
+    const checkAndAddEntry = async (): Promise<void> => {
         formStore.setCleanAllError();
-        if(formStore.name.length>0 && formStore.description.length>0) {
-            await addEntry(formStore.name, formStore.description);
+        const nameWithoutSpace: string = removeSpaces(formStore.name);
+        const descriptionWithoutSpace: string = removeSpaces(formStore.description);
+
+        if(nameWithoutSpace.length >= 150 || descriptionWithoutSpace.length >= 300) {
+            formStore.setNameIsToLongError();
+            return;
         }
-        else {
+
+        if(nameWithoutSpace.length <= 0 || descriptionWithoutSpace.length <= 0) {
             if(!formStore.emptyFieldError) formStore.setEmptyFieldError();
+            return;
         }
+
+        await addEntry(formStore.name, formStore.description);
     }
+
     const addEntry = async (name: string, description: string): Promise<void> => {
         const parentNode = store.data.nodes.find((node: INode) =>
             node.nodeName === currentNameStore.currentParentNode && node.nodeType === currentNameStore.currentParentTypeNode);
@@ -110,17 +152,20 @@ const NavigationContainer: FC<INavigation> = observer(({filter}) => {
             const childNode = parentNode?.subNodes.find((subNode: ISubNode) =>
                 subNode.name === currentNameStore.currentChildNode && subNode.type === currentNameStore.currentParentTypeNode);
 
-            if (childNode) {
-                const defaultId: number = -1;
-                await childNode.addEntry(defaultId, name, parentNode.nodeType, description, childNode.name, parentNode.nodeName, true);
-                filter(parentNode.nodeType as types, childNode.name);
-            } else {
-                console.error(`Узел с именем ${currentNameStore.currentParentNode} не найден`);
+            if (!childNode) {
+                console.error(errorDescription.nodeNotFoundError);
+                return ;
             }
+
+            const defaultId: number = -1;
+            await childNode.addEntry(defaultId, name, parentNode.nodeType, description, childNode.name, parentNode.nodeName, true);
+            filter(parentNode.nodeType as types, childNode.name);
         }
+
         modalWindowStore.setStateEntryModal();
     }
 
+    //модальные окна для добавления узлов и записей
     const modalConfig = [
         {
             isOpen: modalWindowStore.stateNodeModal,
@@ -154,12 +199,12 @@ const NavigationContainer: FC<INavigation> = observer(({filter}) => {
             <Navigation filter={(name, type) => {
                 filter(type, name)
             }}
-                        data={store.data.nodes}
-                        removeSubNode={removeSubNode}
-                        openModal={modalWindowStore.setStateNodeModal}
-                        openEntryModal={modalWindowStore.openEntryModal}
-                        removeNode={removeNode}
-                        openSubNodeModal={modalWindowStore.openSubNodeModal}/>
+                data={store.data.nodes}
+                removeSubNode={removeSubNode}
+                openModal={modalWindowStore.setStateNodeModal}
+                openEntryModal={modalWindowStore.openEntryModal}
+                removeNode={removeNode}
+                openSubNodeModal={modalWindowStore.openSubNodeModal}/>
         </>
     )
 })

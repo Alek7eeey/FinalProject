@@ -30,12 +30,4 @@ export const SubNode = types.model({
                 self.entries.push({id, name, type, description, parentName: childNodeName});
             }
         }),
-
-        /*removeEntry: flow(function*(name: string, type: string) {
-            const entryToRemove = self.entries.find((entry) => entry.name === name && entry.type === type);
-            if (entryToRemove) {
-                self.entries.remove(entryToRemove);
-            }
-        }),*/
-
     }));

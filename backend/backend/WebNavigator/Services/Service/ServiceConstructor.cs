@@ -1,4 +1,4 @@
-﻿using backend.DataAccess.DataAccess.DbPatterns.Interfaces;
+﻿using backend.DataAccess.DbPatterns.Interfaces;
 
 namespace backend.WebNavigator.Services.Service
 {

@@ -1,5 +1,5 @@
-﻿using backend.DataAccess.DataAccess.DbPatterns.Interfaces;
-using backend.DataAccess.DataAccess.Entity;
+﻿using backend.DataAccess.DbPatterns.Interfaces;
+using backend.DataAccess.Entity;
 using backend.DTO;
 using backend.WebNavigator.Services.Interface;
 
@@ -23,21 +23,21 @@ namespace backend.WebNavigator.Services.Service
 
         public async Task<int?> GetIdNodeByName(string childNodeName, string parentName)
         {
-            var allNodes = await UnitOfWork.Nodes.GetAll();
-            return allNodes.FirstOrDefault(entry => entry.Name == childNodeName && entry.ParentName == parentName)?.Id;
+            var node = await UnitOfWork.Nodes.Get(entry => entry.Name == childNodeName && entry.ParentName == parentName);
+            return node?.Id;
         }
 
-        public async Task<Entry> AddEntry(EntryFromServer newEntry)
+        public async Task<Entry> AddEntry(EntryFromClient newEntry)
         {
-            var NodeId = await GetIdNodeByName(newEntry.ChildNodeName, newEntry.ParentName);
+            var currentNodeId = await GetIdNodeByName(newEntry.ChildNodeName, newEntry.ParentName);
             var entry = new Entry()
             {
                 Name = newEntry.Name,
                 ParentName = newEntry.ChildNodeName,
                 Type = newEntry.Type,
                 Description = newEntry.Description,
-                NodeId = (int)NodeId
-            };
+                NodeId = (int)currentNodeId
+			};
 
             return await UnitOfWork.Entries.Create(entry);
         }

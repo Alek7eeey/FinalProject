@@ -17,7 +17,7 @@ const Grid:FC<IGrid> = ({data, clickEntry}) => {
         { align: "center", dataKey: "id", headerName: "ID" },
         { align: "center", dataKey: "name", headerName: "Название" },
         { align: "center", dataKey: "type", headerName: "Тип" },
-        { align: "center", dataKey: "parentName", headerName: "Имя родителя" },
+        { align: "center", dataKey: "parentName", headerName: "Название узла-родителя" },
         { align: "center", dataKey: "description", headerName: "Описание" }
     ];
 
@@ -33,9 +33,14 @@ const Grid:FC<IGrid> = ({data, clickEntry}) => {
                 </TableHead>
                 <TableBody>
                     {data.map((data) => (
-                        <TableRow key={data.id} className={classes.row} onClick={()=>clickEntry(data.name, data.type as types, data.description)}>
+                        <TableRow key={data.id} className={classes.row} onClick={()=>clickEntry(data.name, data.type as types, data.description, data.parentName, data.id)}>
                             {cellConfig.map((cell, index) => (
-                                <TableCell key={index} component="th" scope="row" align={cell.align}>{data[cell.dataKey]}</TableCell>
+                                <TableCell key={index} component="th" scope="row" align={cell.align}>
+                                    {String(data[cell.dataKey]).length > 20 ?
+                                        `${String(data[cell.dataKey]).slice(0, 20)}...` :
+                                        String(data[cell.dataKey])
+                                    }
+                                </TableCell>
                             ))}
                         </TableRow>
                     ))}

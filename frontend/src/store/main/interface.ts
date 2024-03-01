@@ -13,3 +13,10 @@ export interface IEntryData {
     parentName: string,
     childNodeName: string
 }
+
+export interface IEntryFile{
+    nameFile: string,
+    fileType: string,
+    content: any,
+    entryId: number
+}

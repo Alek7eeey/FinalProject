@@ -1,4 +1,4 @@
-﻿using backend.DataAccess.DataAccess.Entity;
+﻿using backend.DataAccess.Entity;
 using backend.DTO;
 
 namespace backend.WebNavigator.Services.Interface
@@ -11,6 +11,6 @@ namespace backend.WebNavigator.Services.Interface
 
         public Task<int?> GetIdNodeByName(string childNodeName, string parentName);
 
-        public Task<Entry> AddEntry(EntryFromServer newEntry);
+        public Task<Entry> AddEntry(EntryFromClient newEntry);
     }
 }

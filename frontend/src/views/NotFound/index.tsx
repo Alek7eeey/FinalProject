@@ -1,11 +1,11 @@
 import useStyle from "./style";
+import errorDescription from "../../errorDescription";
 
 const Error = () => {
     const classes = useStyle();
-    const errorDescription: string = 'Error 404: page not found!';
     return (
         <div className={classes.errorContainer}>
-            <h1>{errorDescription}</h1>
+            <h1>{errorDescription.pageNotFound}</h1>
         </div>
     )
 }

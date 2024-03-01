@@ -1,5 +1,5 @@
-﻿using backend.DataAccess.DataAccess.DbPatterns.Interfaces;
-using backend.DataAccess.DataAccess.Entity;
+﻿using backend.DataAccess.DbPatterns.Interfaces;
+using backend.DataAccess.Entity;
 using backend.WebNavigator.Services.Interface;
 
 namespace backend.WebNavigator.Services.Service
@@ -13,52 +13,52 @@ namespace backend.WebNavigator.Services.Service
 
         public async Task<IEnumerable<Node>> GetNodes()
         {
-            var nodes = await UnitOfWork.Nodes.GetAll();
-            var entries = await UnitOfWork.Entries.GetAll();
-
-            foreach (var node in nodes)
-            {
-                node.Entries = entries.Where(entry => entry.ParentName == node.Name).ToList();
-            }
-
-            return nodes;
-        }
+			var nodes = await UnitOfWork.Nodes.GetAll();
+			foreach (var node in nodes)
+			{
+				node.Entries = (List<Entry>?)await UnitOfWork.Entries.GetAll(entry => entry.ParentName == node.Name);
+			}
+			return nodes;
+		}
 
         public async Task<Node> AddNode(Node newNode) 
         {
             return await UnitOfWork.Nodes.Create(newNode);
         }
 
-        public async Task<Node> RemoveNode(Node nodeToRemove)
+        public async Task RemoveNode(Node nodeToRemove)
         {
             await RemoveChildNodes(nodeToRemove.Name);
             await RemoveRelatedEntries(nodeToRemove.Name);
-            var nodes = await UnitOfWork.Nodes.GetAll();
-            var node = nodes.FirstOrDefault(node => node.Name == nodeToRemove.Name && node.ParentName == nodeToRemove.ParentName);
-            
-            return await UnitOfWork.Nodes.Delete(node);
-        }
+
+			var node = await UnitOfWork.Nodes.Get(node => node.Name == nodeToRemove.Name && node.ParentName == nodeToRemove.ParentName);
+			await UnitOfWork.Nodes.Delete(node);
+		}
 
         private async Task RemoveChildNodes(string parentName)
         {
-            var nodes = await UnitOfWork.Nodes.GetAll();
-            var childNodes = nodes.Where(node => node.ParentName == parentName);
+			var childNodes = await UnitOfWork.Nodes.GetAll(node => node.ParentName == parentName);
+			
+            if (childNodes != null)
+			{
+				foreach (var node in childNodes)
+				{
+					await UnitOfWork.Nodes.Delete(node);
+				}
+			}
+		}
 
-            foreach (var node in childNodes)
-            {
-                await UnitOfWork.Nodes.Delete(node);
-            }
-        }
+		private async Task RemoveRelatedEntries(string parentName)
+		{
+			var relatedEntries = await UnitOfWork.Entries.GetAll(entry => entry.ParentName == parentName);
 
-        private async Task RemoveRelatedEntries(string parentName)
-        {
-            var entries = await UnitOfWork.Entries.GetAll();
-            var relatedEntries = entries.Where(entry => entry.ParentName == parentName);
-
-            foreach (var entry in relatedEntries)
-            {
-                await UnitOfWork.Entries.Delete(entry);
-            }
-        }
-    }
+			if (relatedEntries != null)
+			{
+				foreach (var entry in relatedEntries)
+				{
+					await UnitOfWork.Entries.Delete(entry);
+				}
+			}
+		}
+	}
 }

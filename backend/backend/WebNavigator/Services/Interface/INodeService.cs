@@ -1,4 +1,4 @@
-﻿using backend.DataAccess.DataAccess.Entity;
+﻿using backend.DataAccess.Entity;
 
 namespace backend.WebNavigator.Services.Interface
 {
@@ -8,6 +8,6 @@ namespace backend.WebNavigator.Services.Interface
 
         public Task<Node> AddNode(Node newNode);
 
-        public Task<Node> RemoveNode(Node nodeToRemove);
+        public Task RemoveNode(Node nodeToRemove);
     }
 }

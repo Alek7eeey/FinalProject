@@ -12,10 +12,14 @@ import filterDataStore from "../store/stateInComponent/filterEntries";
 
 const MainContainer =  observer(() => {
     const classes = useStyles();
+
+    //фильтрация записей по нажатию на узлы
     const filter = async (type:enumTypes= enumTypes.default, nameNode:string = rootNodeName): Promise<void> => {
+
+        //по умолчанию при загрузке приложения
         if(type===types.default && nameNode === rootNodeName)
         {
-            const entries =await store.getEntries();
+            const entries = await store.getEntries();
             filterDataStore.setFilterData(entries);
         }
 

@@ -28,7 +28,7 @@ const Store = types.model('Store', {
             });
         }),
 
-        addNodeToStore(name: string, type: string) {
+        addNodeToStore(name: string, type: string):void {
             const existingNode = store.data.nodes.find((node: INode) =>
                 node.nodeName === name && node.nodeType === type);
 
@@ -37,7 +37,7 @@ const Store = types.model('Store', {
             }
         },
 
-        addSubNodeToParent(name: string, type: string, parentName: string, entries: any) {
+        addSubNodeToParent(name: string, type: string, parentName: string, entries: any):void {
             const parentNode = store.data.nodes.find((node: INode) =>
                 node.nodeName === parentName && node.nodeType === type);
 
@@ -52,7 +52,7 @@ const Store = types.model('Store', {
                 }
 
                 if (childNode && entries) {
-                    entries.forEach((entry: any) => {
+                    entries.forEach((entry: any):void => {
                         const existingEntry = childNode.entries.find((e: { id: number; }): boolean => e.id === entry.id);
                         if (!existingEntry) {
                             childNode.addEntry(entry.id, entry.name, entry.type, entry.description, childNode.name, entry.parentName, false);
@@ -62,6 +62,7 @@ const Store = types.model('Store', {
             }
         },
 
+        //получение данных с сервера и приведение к необходимому формату
         getEntries:flow(function* (type = enumTypes.default, nameNode = rootNodeName) {
             yield store.getDataFromServer();
             if (type === enumTypes.default) {

@@ -1,10 +1,10 @@
-using backend.DataAccess.DataAccess.DbPatterns;
-using backend.DataAccess.DataAccess.DbPatterns.Interfaces;
+using backend.DataAccess.DbPatterns;
+using backend.DataAccess.DbPatterns.Interfaces;
 using backend.WebNavigator.Services.Interface;
 using backend.WebNavigator.Services.Service;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using DBContext = backend.DataAccess.DataAccess.DBContext;
+using DBContext = backend.DataAccess.DBContext;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,6 +15,7 @@ builder.Services.AddDbContext<DBContext>(options => options.UseSqlServer(connect
 builder.Services.AddTransient<IUnitOfWork, UnitOfWork>();
 builder.Services.AddTransient<IEntryService, EntryService>();
 builder.Services.AddTransient<INodeService, NodeService>();
+builder.Services.AddTransient<IEntryFileService, EntryFileService>();
 
 builder.Services.AddControllers();
 

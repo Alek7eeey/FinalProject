@@ -10,7 +10,7 @@ export interface IGrid{
         description: string;
     }[],
 
-    clickEntry: (name: string, type: types, description: string)=> void;
+    clickEntry: (name: string, type: types, description: string, parentName: string, id: number)=> void;
 }
 
 export type DataKey = 'id' | 'name' | 'type' | 'parentName' | 'description';
